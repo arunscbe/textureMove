@@ -11,20 +11,48 @@ let canvasOne;
 $(document).ready(function () {
     let detect = detectWebGL();
     if (detect == 1) {
-        canvasOne = this.__canvas = new fabric.Canvas('fabCan',{backgroundColor:'red',height:460,width:640 });
-        init = new sceneSetup(70, 1, 1000, 5, 2, 5);
+        canvasOne = this.__canvas = new fabric.Canvas('fabCan',{backgroundColor:'#ebf2ff',height:512,width:512 });
+        initFab();
+        init = new sceneSetup(70, 1, 1000, 0, 0, 7);
         modelLoad = new objLoad();
         // modelLoad.Model();
         init.renderer.domElement.addEventListener('pointerdown', onDocumentMouseDown, true);
+        // init.planeObj.material.map = new THREE.Texture(canvasOne); 
+        // init.planeObj.material.map.needsUpdate = true;
+       
+        let paintCanvas = document.getElementById("fabCan");
+        let groundTexture = new THREE.CanvasTexture(paintCanvas)
+        // groundTexture.
+        groundTexture.wrapS = THREE.RepeatWrapping
+        groundTexture.wrapT = THREE.RepeatWrapping
+
+        // init.planeObj.material.map = groundTexture;
+        // init.planeObj.material.map.needsUpdate = true;
+        
+
+        let geometry = new THREE.PlaneGeometry(5, 5)
+        let material = new THREE.MeshBasicMaterial({
+            map: groundTexture,
+            side: THREE.DoubleSide
+        })
+        let plane = new THREE.Mesh( geometry, material )
+        plane.name = 'Plane'
+        init.scene.add(plane)
+        arrayObjects.push(plane);
+        // setInterval(function(){
+            // init.planeObj.material.map = groundTexture;
+            // init.planeObj.material.map.needsUpdate = true;
+            // console.log('hi');
+        // },500)
+        canvasOne.on("after:render", function() {
+            plane.material.map.needsUpdate = true
+        })
     } else if (detect == 0) {
         alert("PLEASE ENABLE WEBGL IN YOUR BROWSER....");
     } else if (detect == -1) {
         alert(detect);
         alert("YOUR BROWSER DOESNT SUPPORT WEBGL.....");
     }
-
-
-
 });
 function detectWebGL() {
     // Check for the WebGL rendering context
@@ -58,11 +86,23 @@ let material = {
         side: THREE.DoubleSide
     }),
 }
+function initFab(){
+    let rectangle = new fabric.Rect({
+        width: 200,
+        height: 100,
+        fill: '#eb49e8',
+        stroke: 'green',
+        strokeWidth: 3,
+        // originX:'center'
+    });
+    canvasOne.add(rectangle);
+    canvasOne.centerObject(rectangle);
+}
 class sceneSetup {
     constructor(FOV, near, far, x, y, z, ambientColor) {
         this.container = document.getElementById("canvas");
         this.scene = new THREE.Scene();
-        this.addingCube();
+        // this.addPrimitives();
         this.camera(FOV, near, far, x, y, z);
         this.ambientLight(ambientColor);
         this.render();
@@ -78,7 +118,7 @@ class sceneSetup {
     }
     rendering() {
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
-        this.renderer.setClearColor(0xffff00);
+        this.renderer.setClearColor(0xdbdbdb);
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.renderer.setSize(this.container.offsetWidth, this.container.offsetHeight);
         this.renderer.outputEncoding = THREE.sRGBEncoding;
@@ -91,14 +131,21 @@ class sceneSetup {
         // this.controls.minAzimuthAngle = -280 / 120;
         // this.controls.maxAzimuthAngle = -115 / 120;
     }
-    addingCube() {
-        this.geo = new THREE.BoxBufferGeometry(1, 1, 1);
-        this.mat = material.cube;
-        this.camPoint = new THREE.Mesh(this.geo, this.mat);
-        this.scene.add(this.camPoint);
-        this.camPoint.position.set(0, 0, 0);
-        arrayObjects.push(this.camPoint);
+    addPrimitives() {
+        // this.geo = new THREE.BoxBufferGeometry(1, 1, 1);
+        // this.mat = material.cube;
+        // this.camPoint = new THREE.Mesh(this.geo, this.mat);
+        // this.camPoint.name = 'Cube';
+        // this.scene.add(this.camPoint);
+        // this.camPoint.position.set(0, 0, 0);
+        // arrayObjects.push(this.camPoint);
 
+        this.planeGeo = new THREE.PlaneGeometry( 7, 7);
+        this.planeMat = new THREE.MeshLambertMaterial( { side: THREE.DoubleSide} );
+        this.planeObj = new THREE.Mesh(  this.planeGeo , this.planeMat  );
+        this.planeObj.name = 'plane';
+        this.scene.add( this.planeObj );
+        arrayObjects.push(this.planeObj);
     }
     ambientLight(ambientColor) {
         this.ambiLight = new THREE.AmbientLight(0xffffff);
@@ -132,7 +179,7 @@ const onDocumentMouseDown = (event) => {
     let intersects = raycaster.intersectObjects( arrayObjects,true );
     if ( intersects.length > 0 ) {	 
         SELECTED = intersects[ 0 ].object;	
-        console.log('SELECTED--->',SELECTED);
+        console.log('SELECTED--->',SELECTED.name);
     }
 }
 

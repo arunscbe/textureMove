@@ -12,11 +12,16 @@
     }
 
     #canvas {
-
+        /* float : left; */
         width: 50%;
         height: 100%;
 
     }
+    /* #fabCan{
+        position: absolute;
+        float:right;
+        margin-left:800px;
+    } */
 </style>
 <script src="js/libs/jquery-3.6.4.min.js"></script>
 <script src="js/libs/fabric.min.js"></script>
@@ -25,10 +30,8 @@
 
 <body>
     <div class="wrapper">
-        <div id="canvas"></div>
-        <div id="fabricContainer">
-            <canvas id="fabCan"></canvas>
-        </div>
+        <div id="canvas"></div>       
+        <canvas id="fabCan"></canvas>
     </div>
 </body>
 <script type="module" src="js/config.js"></script>
