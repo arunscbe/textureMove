@@ -7,10 +7,11 @@ let gltfpath = "assets/path.glb";
 let texLoader = new THREE.TextureLoader();
 let arrayObjects = [];
 let raycaster = new THREE.Raycaster(),mouse = new THREE.Vector2(),SELECTED;
-
+let canvasOne;
 $(document).ready(function () {
     let detect = detectWebGL();
     if (detect == 1) {
+        canvasOne = this.__canvas = new fabric.Canvas('fabCan',{backgroundColor:'red',height:460,width:640 });
         init = new sceneSetup(70, 1, 1000, 5, 2, 5);
         modelLoad = new objLoad();
         // modelLoad.Model();
