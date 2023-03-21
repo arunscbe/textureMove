@@ -7,16 +7,18 @@ let gltfpath = "assets/path.glb";
 let texLoader = new THREE.TextureLoader();
 let arrayObjects = [];
 let raycaster = new THREE.Raycaster(),mouse = new THREE.Vector2(),SELECTED;
-let canvasOne;
+let canvasOne,rect,onClickPosition = new THREE.Vector2();;
+let posX,posY,rect1,clientX,clientY;
 $(document).ready(function () {
     let detect = detectWebGL();
     if (detect == 1) {
         canvasOne = this.__canvas = new fabric.Canvas('fabCan',{backgroundColor:'#ebf2ff',height:512,width:512 });
         initFab();
+        console.log(canvasOne);
         init = new sceneSetup(70, 1, 1000, 0, 0, 7);
         modelLoad = new objLoad();
         // modelLoad.Model();
-        init.renderer.domElement.addEventListener('pointerdown', onDocumentMouseDown, true);
+        // init.renderer.domElement.addEventListener('pointerdown', onDocumentMouseDown, true);
         // init.planeObj.material.map = new THREE.Texture(canvasOne); 
         // init.planeObj.material.map.needsUpdate = true;
        
@@ -47,6 +49,28 @@ $(document).ready(function () {
         canvasOne.on("after:render", function() {
             plane.material.map.needsUpdate = true
         })
+       /* canvasOne.on('mouse:down',function(option){
+            // console.log(option.e.x,option.e.y);
+            //if(canvas.containsPoint(option.e,rect)) console.log('inside rect');
+            var objects = canvasOne.getObjects();
+            // console.log('objects-->',objects);
+            // objects.forEach(element => {
+                if(rect.containsPoint(option.e)){
+                    console.log('inside rect')  
+                } else{
+                    console.log('NO....');
+                }
+            // });
+           })*/
+        // canvasOne.on('mouse:down', function () {
+        //     canvasOne.off('mouse:move', eventHandler);
+        // });
+        init.renderer.domElement.addEventListener("pointerdown", getEvent, false);
+        // window.addEventListener("pointerup", onPointer, false);
+        // window.addEventListener("pointermove", onPointer, false);
+
+        // window.addEventListener( 'mousemove', onMouseMove, false );
+       
     } else if (detect == 0) {
         alert("PLEASE ENABLE WEBGL IN YOUR BROWSER....");
     } else if (detect == -1) {
@@ -87,16 +111,27 @@ let material = {
     }),
 }
 function initFab(){
-    let rectangle = new fabric.Rect({
-        width: 200,
+     rect = new fabric.Rect({
+        width: 100,
         height: 100,
         fill: '#eb49e8',
         stroke: 'green',
         strokeWidth: 3,
         // originX:'center'
     });
-    canvasOne.add(rectangle);
-    canvasOne.centerObject(rectangle);
+    canvasOne.add(rect);
+    canvasOne.centerObject(rect);
+    // let rectOne = new fabric.Rect({
+    //     width: 200,
+    //     height: 100,
+    //     fill: 'red',
+    //     stroke: 'green',
+    //     strokeWidth: 3,
+    //     // originX:'center'
+    // });
+    // canvasOne.add(rectOne);
+    // // canvasOne.centerObject(rectOne);
+    
 }
 class sceneSetup {
     constructor(FOV, near, far, x, y, z, ambientColor) {
@@ -124,6 +159,7 @@ class sceneSetup {
         this.renderer.outputEncoding = THREE.sRGBEncoding;
         this.container.appendChild(this.renderer.domElement);
         this.controls = new OrbitControls(this.cameraMain, this.renderer.domElement);
+      
         // this.controls.minDistance = 100;
         // this.controls.maxDistance = 300;
         // this.controls.maxPolarAngle = Math.PI / 2 * 115 / 120;
@@ -170,6 +206,8 @@ const onWindowResize=()=> {
 
 window.addEventListener('resize', onWindowResize, false);
 
+
+/*
 const onDocumentMouseDown = (event) => {
     event.preventDefault();
     const rect = init.renderer.domElement.getBoundingClientRect();        
@@ -177,12 +215,151 @@ const onDocumentMouseDown = (event) => {
     mouse.y = - ( ( event.clientY - rect.top ) / ( rect.bottom - rect.top) ) * 2 + 1;
     raycaster.setFromCamera( mouse, init.cameraMain );
     let intersects = raycaster.intersectObjects( arrayObjects,true );
+    let texcoords = null;
     if ( intersects.length > 0 ) {	 
         SELECTED = intersects[ 0 ].object;	
+        texcoords = intersects[ 0 ].uv
+        console.log('FORUV--->',texcoords);
         console.log('SELECTED--->',SELECTED.name);
     }
-}
+    if(texcoords){
+        
+        let val_X = texcoords.x;
+        let val_Y = texcoords.y;
+        posX = (val_X * 512) | 0;
+        posY = (512 - val_Y * 512) | 0;
+        rect1 = canvasOne.upperCanvasEl.getBoundingClientRect();
+        clientX = posX + rect1.left | 0;
+        clientX = posY + rect1.top | 0;
+        let screenX = 0;
+		let screenY = 0;
+        let evt = document.createEvent("MouseEvents");
+        console.log(evt);
+        evt.initMouseEvent(name, true, true, window, 1, screenX, screenY, clientX, clientY, event.ctrlKey, event.altKey, event.shiftKey, event.metaKey, event.button, window.upperCanvasEl);
+        return evt;
+    }
+    else {
+	}
+	return null;
+}*/
+var getMousePosition = function ( dom, x, y ) {
+    var rect = dom.getBoundingClientRect();
+    return [ ( x - rect.left ) / rect.width, ( y - rect.top ) / rect.height ];
+};
+const getEvent = (evt)=>{
+    evt.preventDefault();
+    // var array = getMousePosition(raycastContainer, evt.clientX, evt.clientY);
+    // init.renderer.domElement.getBoundingClientRect();  
+    // mouse.x = ( ( event.clientX - rect.left ) / ( rect.right - rect.left ) ) * 2 - 1;
+    // mouse.y = - ( ( event.clientY - rect.top ) / ( rect.bottom - rect.top) ) * 2 + 1;  
+    var array = getMousePosition( init.renderer.domElement, evt.clientX, evt.clientY );
+    onClickPosition.fromArray( array );
+    // raycaster.setFromCamera( mouse, init.cameraMain );
+    // let intersects = raycaster.intersectObjects( init.scene.children );
+    var intersects = getIntersects( onClickPosition, init.scene.children );
+    let texcoords = null;
+    if ( intersects.length > 0 && intersects[ 0 ].uv ) {	 
+        // SELECTED = intersects[ 0 ].object;	
+        var uv = intersects[ 0 ].uv;
+        intersects[ 0 ].object.material.map.transformUv( uv );
 
+        var circle = new fabric.Circle({
+            radius: 3,
+            left: getRealPosition( "x", uv.x ),
+            top: getRealPosition( "y", uv.y ),
+            fill: 'red'
+        });
+        canvasOne.add( circle );
+        /*texcoords = intersects[ 0 ].uv
+        intersects[0].object.material.map.transformUv(texcoords);*/
+        var selected = getObjectUnderPoint(uv);
+         console.log(selected);
+        if (selected != null) {
+            console.log(selected);
+          init.controls.enabled = false;
+          canvasOne.setActiveObject(selected);
+          canvasOne.renderAll();
+        } else {
+            canvasOne.discardActiveObject().renderAll();
+            init.controls.enabled = false;
+        }
+    }
+}
+var getIntersects = function ( point, objects ) {
+    mouse.set( ( point.x * 2 ) - 1, - ( point.y * 2 ) + 1 );
+    raycaster.setFromCamera( mouse, init.cameraMain );
+    return raycaster.intersectObjects( objects );
+};
+function getRealPosition( axis, value ) {
+    let CORRECTION_VALUE = axis === "x"? 4.5: 5.5;
+    return Math.round( value * 512 ) - CORRECTION_VALUE;
+}
+var getObjectUnderPoint = function (uv) {   
+    var cp = { x: uv.x *512, y: uv.y*512 };
+    var objects = canvasOne.getObjects();
+    console.log(objects[0]);
+    for (var i = 0; i < objects.length; i++) {       
+     var obj = objects[i];
+    // canvasOne.obj.setCoords(); 
+     if (!canvasOne.containsPoint(null,obj, cp))continue;      
+       let isIntersecting = canvasOne.isTargetTransparent(obj, cp.x, cp.y);
+      if (isIntersecting) {
+          return obj;
+      }
+    }
+    return null;
+  };
+/*
+const getEvent = (name,event) => {
+   
+    raycaster.setFromCamera( mouse, init.cameraMain );
+    let intersects = raycaster.intersectObjects( init.scene.children );
+    let texcoords = null;
+    if ( intersects.length > 0 ) {	 
+        // SELECTED = intersects[ 0 ].object;	
+        texcoords = intersects[ 0 ].uv
+    }
+    if(texcoords){        
+        let val_X = texcoords.x;
+        let val_Y = texcoords.y;
+        posX = (val_X * 512) | 0;
+        posY = (512 - val_Y * 512) | 0;
+        rect1 = canvasOne.upperCanvasEl.getBoundingClientRect();
+        clientX = posX + rect1.left | 0;
+        clientX = posY + rect1.top | 0;
+        let screenX = 0;
+		let screenY = 0;
+        let evt = document.createEvent("MouseEvents");
+        // console.log(evt);
+        evt.initMouseEvent(name, true, true, window, 1, screenX, screenY, clientX, clientY, event.ctrlKey, event.altKey, event.shiftKey, event.metaKey, event.button, window.upperCanvasEl);
+        return evt;
+    }
+    else {
+	}
+	return null;
+}
+const onPointer = function (event) {
+	event.stopPropagation();
+	var e = getEvent(event.type.replace("pointer", "mouse"), event);
+	// console.log(e);
+	if (e != null) {
+		canvasOne.upperCanvasEl.dispatchEvent(e);
+	}
+	
+	// Set current cursor used by fabricjs
+	// renderCanvas.style.cursor = fabricCanvas.upperCanvasEl.style.cursor;
+	// Important for Internet Explorer!
+	return false;
+};*/
+function onMouseMove(  event ) {
+
+	// calculate mouse position in normalized device coordinates
+	// (-1 to +1) for both components
+
+	mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+	mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+
+}
 class objLoad {
     constructor() {
 
